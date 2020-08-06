@@ -3,7 +3,9 @@
 
 use tch::nn::{Module};
 use tch::{nn, Device, Tensor};
-use failure;
+use rocket::request::Form;
+use rocket::State;
+use rocket::http::RawStr;
 
 const INPUT_SIZE: i64 = 1;
 const OUTPUT_SIZE: i64 = 1;
@@ -20,6 +22,18 @@ fn net(vs: &nn::Path) -> impl Module {
       bias: true,
     }
   ))
+}
+
+#[derive(Debug, FromForm)]
+struct BMI {
+  bmi: f32,
+}
+
+#[post("/predict", data="<bmi>")]
+fn predict(bmi: Form<BMI>, classifier_state: State<impl Module>) -> std::string::String {
+  let classifier = classifier_state.inner();
+  let prediction = classifier.forward(&Tensor::of_slice(&[bmi.bmi]));
+  format!("{}", f32::from(prediction))
 }
 
 #[get("/")]
@@ -39,5 +53,7 @@ fn main() {
   ");
   vs.load(args[1].as_str()).unwrap();
 
-  rocket::ignite().mount("/", routes![index]).launch();
+  rocket::ignite()
+    .manage(linear)
+    .mount("/", routes![index]).launch();
 }
