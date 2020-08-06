@@ -5,6 +5,7 @@ authors = ["Daniel Bank <daniel.p.bank@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+rocket = "0.4.5"
 tch = "0.2.0"
 csv = "1.1.3"
 serde = { version = "1.0.114", "features" = ["derive"]}

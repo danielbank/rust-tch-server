@@ -1,3 +1,6 @@
+#![feature(proc_macro_hygiene, decl_macro)]
+#[macro_use] extern crate rocket;
+
 use tch::nn::{Module};
 use tch::{nn, Device, Tensor};
 use failure;
@@ -19,7 +22,12 @@ fn net(vs: &nn::Path) -> impl Module {
   ))
 }
 
-fn main() -> failure::Fallible<()> {
+#[get("/")]
+fn index() -> &'static str {
+    "Life Expectency Prediction Server"
+}
+
+fn main() {
   let mut vs = nn::VarStore::new(Device::Cpu);
   let linear = net(&vs.root());
 
@@ -29,11 +37,7 @@ fn main() -> failure::Fallible<()> {
   Usage:\n
   cargo run <existing_weights_file>\n
   ");
-  vs.load(args[1].as_str())?;
+  vs.load(args[1].as_str()).unwrap();
 
-  let bmi: f32 = 28.45698;
-  let prediction = linear.forward(&Tensor::of_slice(&[bmi]));
-  println!("Predicted a life expectency of {:#?} for {}", prediction, bmi);
-
-  Ok(())
+  rocket::ignite().mount("/", routes![index]).launch();
 }
