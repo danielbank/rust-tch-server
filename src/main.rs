@@ -1,11 +1,11 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 #[macro_use] extern crate rocket;
 
+use std::sync::{Mutex};
 use tch::nn::{Module};
 use tch::{nn, Device, Tensor};
 use rocket::request::Form;
 use rocket::State;
-use rocket::http::RawStr;
 
 const INPUT_SIZE: i64 = 1;
 const OUTPUT_SIZE: i64 = 1;
@@ -30,15 +30,15 @@ struct BMI {
 }
 
 #[post("/predict", data="<bmi>")]
-fn predict(bmi: Form<BMI>, classifier_state: State<impl Module>) -> std::string::String {
-  let classifier = classifier_state.inner();
+fn predict(bmi: Form<BMI>, classifier_mutex: State<Mutex<Box<dyn Module>>>) -> std::string::String {
+  let classifier = classifier_mutex.lock().unwrap();
   let prediction = classifier.forward(&Tensor::of_slice(&[bmi.bmi]));
   format!("{}", f32::from(prediction))
 }
 
 #[get("/")]
 fn index() -> &'static str {
-    "Life Expectency Prediction Server"
+    "Life Expectancy Prediction Server: curl -d 'bmi=<bmi>' -X POST http://localhost:8080/predict"
 }
 
 fn main() {
@@ -54,6 +54,6 @@ fn main() {
   vs.load(args[1].as_str()).unwrap();
 
   rocket::ignite()
-    .manage(linear)
-    .mount("/", routes![index]).launch();
+    .manage(Mutex::new(Box::new(linear) as Box<dyn Module>))
+    .mount("/", routes![index, predict]).launch();
 }
