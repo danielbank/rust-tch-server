@@ -7,6 +7,10 @@ Example of a Rocket web server running a [tch-rs](https://crates.io/crates/tch) 
 
 This project was presented at the [Desert Rust](https://rust.azdevs.org/) meetup.
 
+## Installation
+
+See the **Getting Started** section of the [tch crate](https://crates.io/crates/tch) for instructions on how to set up Libtorch on your host, which is necessary to run this example.
+
 ## Usage
 
 ### Train a Linear Regression Classifier
