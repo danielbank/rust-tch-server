@@ -30,9 +30,9 @@ struct BMI {
 }
 
 #[post("/predict", data="<bmi>")]
-fn predict(bmi: Form<BMI>, classifier_mutex: State<Mutex<Box<dyn Module>>>) -> std::string::String {
-  let classifier = classifier_mutex.lock().unwrap();
-  let prediction = classifier.forward(&Tensor::of_slice(&[bmi.bmi]));
+fn predict(bmi: Form<BMI>, model_mutex: State<Mutex<Box<dyn Module>>>) -> std::string::String {
+  let model = model_mutex.lock().unwrap();
+  let prediction = model.forward(&Tensor::of_slice(&[bmi.bmi]));
   format!("{}", f32::from(prediction))
 }
 

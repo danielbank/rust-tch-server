@@ -2,8 +2,8 @@
 
 Example of a Rocket web server running a [tch-rs](https://crates.io/crates/tch) Linear Regression model that predicts life expectancy based on body mass index.  The project consists of two parts: a
 
-- a training program that reads the `bmi_and_life_expectancy.csv` data, trains a Linear Regression classifier, and saves its weights to file
-- a web server that instantiates a Linear Regression classifier using the saved weights and responds to requests with predictions.
+- a training program that reads the `bmi_and_life_expectancy.csv` data, trains a Linear Regression model, and saves its weights to file
+- a web server that instantiates a Linear Regression model using the saved weights and responds to requests with predictions.
 
 This project was presented at the [Desert Rust](https://rust.azdevs.org/) meetup.
 
@@ -13,7 +13,7 @@ See the **Getting Started** section of the [tch crate](https://crates.io/crates/
 
 ## Usage
 
-### Train a Linear Regression Classifier
+### Train a Linear Regression Model
 
 - Running the `train` example will generate a `weights.pt` file with the model weights (i.e. the slope and y-intercept for a line):
 
@@ -43,9 +43,9 @@ curl -d 'bmi=28.45' -X POST http://localhost:8080/predict
 
 ## Troubleshooting
 
-### Sharing the classifier via `rocket::State` but `impl Module` cannot be shared between threads safely
+### Sharing the model via `rocket::State` but `impl Module` cannot be shared between threads safely
 
-The main challenge I faced was when I wanted to utilize the linear regression classifier in the prediction route.  The classifier is created in `main()`:
+The main challenge I faced was when I wanted to utilize the linear regression model in the prediction route.  The model is created in `main()`:
 
 ```
 let mut vs = nn::VarStore::new(Device::Cpu);
@@ -65,7 +65,7 @@ The type of `linear` is `impl Module` or "a type that implement nn::Module".  As
 In any case, the trouble arises in the definition for the route handler, where we now write:
 
 ```
-fn predict(bmi: Form<BMI>, classifier_state: State<impl Module>) -> std::string::String { ... }
+fn predict(bmi: Form<BMI>, model_state: State<impl Module>) -> std::string::String { ... }
 ```
 
 This line then reports an error:
@@ -91,7 +91,7 @@ doesn't have a size known at compile-time
 help: the trait `std::marker::Sized` is not implemented for `(dyn tch::nn::Module + std::marker::Sync + 'static)`
 ```
 
-The solution is to use a [mutex](https://doc.rust-lang.org/std/sync/struct.Mutex.html) to ensure that shared access to the classifier in the route and main thread is protected.  The `main()` function becomes:
+The solution is to use a [mutex](https://doc.rust-lang.org/std/sync/struct.Mutex.html) to ensure that shared access to the model in the route and main thread is protected.  The `main()` function becomes:
 
 ```
 rocket::ignite()
@@ -102,5 +102,5 @@ rocket::ignite()
 And the definition of the route handler becomes:
 
 ```
-fn predict(bmi: Form<BMI>, classifier_mutex: State<Mutex<Box<dyn Module>>>) -> std::string::String { ... }
+fn predict(bmi: Form<BMI>, model_mutex: State<Mutex<Box<dyn Module>>>) -> std::string::String { ... }
 ```
